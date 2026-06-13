@@ -107,8 +107,8 @@ def simplify_internal(src_gpkg, src_layer_name, dst_gpkg, dst_layer_name, densif
 
     num_worker_to_count = num_workers
 
-    read_to_simplify_queue = multiprocessing.Queue(32768)
-    simplify_to_write_queue = multiprocessing.Queue(32768)
+    read_to_simplify_queue = multiprocessing.Queue(16384)
+    simplify_to_write_queue = multiprocessing.Queue(16384)
 
     manager = MyManager()
     manager.start()

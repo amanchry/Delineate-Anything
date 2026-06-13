@@ -172,3 +172,48 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# =============================================================================
+# Project-specific — large data files
+# =============================================================================
+
+# macOS metadata
+.DS_Store
+**/.DS_Store
+
+# --- data/images/ ---
+# Ignore all downloaded imagery folders, but keep the bundled Sample
+data/images/*
+!data/images/Sample/
+
+# --- data/masks/ ---
+# Ignore all downloaded land cover masks, but keep the bundled Sample
+data/masks/*
+!data/masks/Sample.tif
+
+# --- data/delineated/ ---
+# Ignore all generated output GeoPackages, but keep the bundled Sample results
+data/delineated/*
+!data/delineated/Sample.gpkg
+!data/delineated/Sample.simp.gpkg
+
+# --- Other large/generated data folders ---
+data/temp/          # intermediate processing files (auto-deleted after runs)
+data/boundaries/    # user-supplied AOI GeoJSON files (personal/local)
+data/rasters/       # any manually placed rasters
+outputs/            # preview PNGs
+
+# --- GDAL auxiliary / sidecar files ---
+*.aux.xml
+*.tif.ovr
+*.gpkg-wal
+*.gpkg-shm
+
+# --- Model weights (auto-downloaded from HuggingFace, no need to commit) ---
+*.pt
+
+# --- Auto-generated per-run batch configs ---
+batch_*.yaml
+
+# --- Scene metadata sidecars (written alongside downloaded GeoTIFFs) ---
+data/images/*.json

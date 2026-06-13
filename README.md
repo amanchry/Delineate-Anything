@@ -33,8 +33,7 @@ by [Mykola Lavreniuk](https://scholar.google.com/citations?hl=en&user=-oFR-RYAAA
 
 ## ⚙️ Environment Setup
 
-To set up the environment on a Linux system:
-
+**Linux:**
 ```bash
 mkdir -p ~/miniconda3
 wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
@@ -43,50 +42,141 @@ rm ~/miniconda3/miniconda.sh
 
 source ~/miniconda3/bin/activate
 conda install -c conda-forge gdal
-
-# optional: pip install torch==2.6.0
 pip install -r requirements.txt
 ```
 
-To set up the environment on a Windows system:
-
+**Windows:**
 ```bash
 conda create --prefix=./.conda python=3.11
 conda activate ./.conda
 conda install -c conda-forge gdal
-# optional: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
 pip install -r requirements.txt
 ```
 
+**macOS (Apple Silicon):**
+```bash
+conda activate <your-env>
+conda install -c conda-forge gdal
+pip install -r requirements.txt
+```
 
+---
 
-## 🚀 Inference
-💡 Try the Colab demo first, **no installation needed**, or run locally if you prefer full control.
+## 🚀 Running the Pipeline
 
-1. Place your RGB images in the `data/images/` folder. If available, also include the corresponding land cover map in the `data/masks/`
-   _(Three Sentinel-2 sample images and a land cover map are provided for testing.)_
+There are two ways to run depending on whether you want automatic data download or bring your own imagery.
 
-2. Run the inference script:
+---
 
-   ```bash
-   python delineate.py -b batch_sample.yaml
-   ```
-   
-   The vectorized field boundaries will be saved as a GeoPackage in:
-   ```data/delineated/```
+### Option A — Full Automated Workflow via `main.py`
 
-3. (Optional) To shift the resulting vector geometries:
-   
-   Shift using image pixels:
-   ```
-   python shift.py -i PATH_TO_SRC_GPKG -o PATH_TO_DST_GPKG -s PATH_TO_SAMPLE_IMAGE -x SHIFT_PIXELS_X -y SHIFT_PIXELS_Y
-   ```
-   Shift using spatial units (SRS):
-   ```
-   python shift.py -i PATH_TO_SRC_GPKG -o PATH_TO_DST_GPKG -x SHIFT_UNITS_X -y SHIFT_UNITS_Y
-   ```
+Use this if you want to **automatically download Sentinel-2 imagery and an ESA WorldCover land cover mask** for any region, then delineate field boundaries — all in one command.
 
-ℹ️ Tip: For advanced settings, refer to the instructions in [delineation_config_guide.md](delineation_config_guide.md)
+**1. Edit `main.py` — set your region and options at the top of the file:**
+
+```python
+# --- Input boundary ---
+AOI_PATH     = "data/boundaries/myarea.geojson"  # GeoJSON or Shapefile of your area
+AREA_NAME    = "MyArea"                          # name used for output files
+
+# If using a multi-feature admin shapefile, filter to one region:
+FILTER_FIELD = "NAME_3"   # attribute column  (set None for plain GeoJSON)
+FILTER_VALUE = "Dinan"    # value to match    (set None for plain GeoJSON)
+
+# --- Sentinel-2 download ---
+DATE_RANGE   = "2023-04-01/2023-10-31"
+MAX_CLOUD    = 10.0        # max cloud cover %
+
+# --- Land cover mask ---
+DOWNLOAD_LULC = True       # False = skip mask, delineate without land cover filter
+LULC_YEAR     = 2021       # 2020 or 2021
+
+# --- Model ---
+MODEL = "large"            # "large" (accurate) or "small" (faster)
+```
+
+**2. Run:**
+
+```bash
+python main.py
+```
+
+**What happens:**
+- Downloads the best cloud-free Sentinel-2 RGB tile for your AOI → `data/images/<AREA_NAME>/`
+- Downloads ESA WorldCover land cover mask → `data/masks/<AREA_NAME>.tif` _(if `DOWNLOAD_LULC = True`)_
+- Runs field boundary delineation
+- Saves output to `data/delineated/<AREA_NAME>.gpkg` and `<AREA_NAME>.simp.gpkg`
+
+> Downloads are skipped automatically on re-runs if the files already exist.
+
+---
+
+### Option B — Bring Your Own RGB Image
+
+Use this if you already have a GeoTIFF (from any satellite source) and want to run delineation directly.
+
+**1. Place your image(s) in a named subfolder:**
+
+```
+data/
+  images/
+    MyArea/
+      image.tif        ← your RGB GeoTIFF (one or more tiles, same CRS and pixel size)
+  masks/
+    MyArea.tif         ← optional: land cover mask (ESA WorldCover or similar)
+```
+
+**2. Edit `batch_sample.yaml`:**
+
+```yaml
+base_config: conf_sample.yaml
+
+data_root:   data/images
+output_root: data/delineated
+temp_root:   data/temp
+mask_root:   data/masks
+keep_temp:   false
+
+include:
+  - MyArea        # must match your subfolder name
+
+exclude: null
+override: null
+```
+
+**3. Edit `conf_sample.yaml` — set your band order:**
+
+```yaml
+data_loader:
+  bands: [3, 2, 1]        # adjust to match RGB bands in your image (GDAL 1-based index)
+  nodata_value: [0, 0, 0] # black pixels = nodata
+```
+
+**4. Run:**
+
+```bash
+python delineate.py -b batch_sample.yaml
+```
+
+Output is saved to `data/delineated/MyArea.gpkg` and `MyArea.simp.gpkg`.
+
+---
+
+### Optional Post-processing
+
+**Fix spatial offset** (if output polygons look shifted in QGIS):
+```bash
+python shift.py -i data/delineated/MyArea.gpkg -o data/delineated/MyArea.shifted.gpkg \
+  -s data/images/MyArea/image.tif -x 1 -y -1
+```
+
+**Re-run simplification standalone** (without re-running inference):
+```bash
+# Edit simp_sample.yaml to set src/dst paths, then:
+python simplify.py -c simp_sample.yaml
+```
+
+ℹ️ For a full parameter reference see [delineation_config_guide.md](delineation_config_guide.md)
 
 
 ## License
