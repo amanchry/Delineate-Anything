@@ -17,12 +17,6 @@ by [Mykola Lavreniuk](https://scholar.google.com/citations?hl=en&user=-oFR-RYAAA
 
 ![intro](figs/intro.jpg)
 
-## News
-- `2025/11/17`: New paper published **Delineate Anything Flow: Fast, Country-Level Field Boundary Detection from Any Source** [arXiv:2511.13417](https://arxiv.org/abs/2511.13417).
-- `2025/09/07`: 🚀🚀🚀 [Autobounds](https://autobounds.com/) released for convenient **field boundary detection** with Delineate-Anything, directly in the browser!  
-   👉 [Demo Video](http://bit.ly/4ngrM9k) | [Live App](https://autobounds.com/ai-models).
-- `2025/08/30`: 🚀🚀 Our paper on Delineate-Anything accepted at **ECAI 2025** 🎉.
-- `2025/07/07`: 🚀 Delineate-Anything integrated into the [TorchGeo library](https://huggingface.co/torchgeo/delineate-anything/blob/main/README.md).
 
 ## 🔗 Pre-trained Models
 
